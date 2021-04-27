@@ -3,43 +3,9 @@ import cv2
 import numpy as np
 from skimage import transform as trans
 
-def parse_lst_line(line):
-  vec = line.strip().split("\t")
-  assert len(vec)>=3
-  aligned = int(vec[0])
-  image_path = vec[1]
-  label = int(vec[2])
-  bbox = None
-  landmark = None
-  #print(vec)
-  if len(vec)>3:
-    bbox = np.zeros( (4,), dtype=np.int32)
-    for i in xrange(3,7):
-      bbox[i-3] = int(vec[i])
-    landmark = None
-    if len(vec)>7:
-      _l = []
-      for i in xrange(7,17):
-        _l.append(float(vec[i]))
-      landmark = np.array(_l).reshape( (2,5) ).T
-  #print(aligned)
-  return image_path, label, bbox, landmark, aligned
-
-
-
-
 def read_image(img_path, **kwargs):
-  mode = kwargs.get('mode', 'rgb')
-  layout = kwargs.get('layout', 'HWC')
-  if mode=='gray':
-    img = cv2.imread(img_path, cv2.CV_LOAD_IMAGE_GRAYSCALE)
-  else:
-    img = cv2.imread(img_path, cv2.CV_LOAD_IMAGE_COLOR)
-    if mode=='rgb':
-      #print('to rgb')
-      img = img[...,::-1]
-    if layout=='CHW':
-      img = np.transpose(img, (2,0,1))
+  img = cv2.imread(img_path, cv2.CV_LOAD_IMAGE_COLOR)
+  img = img[..., ::-1]
   return img
 
 
@@ -55,7 +21,7 @@ def preprocess(img, bbox=None, landmark=None, **kwargs):
       image_size = [image_size[0], image_size[0]]
     assert len(image_size)==2
     assert image_size[0]==112
-    assert image_size[0]==112 or image_size[1]==96
+    assert image_size[0]==112
   if landmark is not None:
     assert len(image_size)==2
     src = np.array([
@@ -94,20 +60,8 @@ def preprocess(img, bbox=None, landmark=None, **kwargs):
     return ret 
   else: #do align using landmark
     assert len(image_size)==2
-
-    #src = src[0:3,:]
-    #dst = dst[0:3,:]
-
-
-    #print(src.shape, dst.shape)
-    #print(src)
-    #print(dst)
-    #print(M)
     warped = cv2.warpAffine(img,M,(image_size[1],image_size[0]), borderValue = 0.0)
 
-    #tform3 = trans.ProjectiveTransform()
-    #tform3.estimate(src, dst)
-    #warped = trans.warp(img, tform3, output_shape=_shape)
     return warped
 
 

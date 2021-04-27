@@ -1,6 +1,4 @@
 import sys
-
-# from src.insightface.src.common import face_preprocess
 from src.common import face_preprocess
 
 sys.path.append('../insightface/deploy')
