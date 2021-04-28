@@ -192,7 +192,22 @@ class RegistrationModule:
         self.message.configure(text=notifctn)
 
     def makePrediction(self):
-        faceDetector = FacePredictor()
+        ap = argparse.ArgumentParser()
+
+        ap.add_argument("--embeddings", default="./faceEmbeddingModels/embeddings.pickle",
+                        help="path to serialized db of facial embeddings")
+        ap.add_argument("--trained_model", default="./faceEmbeddingModels/my_model.h5",
+                        help="path to output trained model")
+        ap.add_argument("--le", default="./faceEmbeddingModels/le.pickle",
+                        help="path to output label encoder")
+        ap.add_argument('--image_size', default='112,112', help='')
+        ap.add_argument('--model', default='./insightface/models/model-y1-test2/model,0', help='path to load model.')
+        ap.add_argument('--threshold', default=1.24, type=float, help='ver dist threshold')
+        ap.add_argument('--det', default=0, type=int,
+                        help='mtcnn option, 1 means using R+O, 0 means detect from begining')
+
+        args = vars(ap.parse_args())
+        faceDetector = FacePredictor(args)
         faceDetector.detectFace()
 
     def close_window(self):
