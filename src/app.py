@@ -8,8 +8,10 @@ from tkinter import *
 import tkinter.font as font
 import webbrowser
 import random
-
+import time
 from src.collect_training_data.get_faces_from_camera import TrainingDataCollector
+from src.common.facePredictor import FacePredictor
+from src.common.faces_embedding import GenerateFaceEmbedding
 from src.training.train_softmax import TrainFaceRecogModel
 
 class RegistrationModule:
@@ -59,7 +61,7 @@ class RegistrationModule:
         lbl3 = tk.Label(self.window, text="Notification : ", width=15, fg="white", bg="#363e75", height=2,
                         font=('times', 15))
         self.message = tk.Label(self.window, text="", bg="white", fg="black", width=30, height=1,
-                                activebackground="#e47911", font=('times', 15))
+                                activebackground="#7dd12e", font=('times', 15))
         self.message.place(x=220, y=220)
         lbl3.place(x=80, y=260)
 
@@ -72,6 +74,7 @@ class RegistrationModule:
                             height=2,
                             activebackground="#118ce1", font=('times', 15, ' bold '))
         takeImg.place(x=80, y=350)
+
 
         trainImg = tk.Button(self.window, text="Train Images", command=self.trainModel, fg="white", bg="#363e75", width=15,
                              height=2,
@@ -133,7 +136,6 @@ class RegistrationModule:
         return False
 
     def collectUserImageForRegistration(self):
-        pass
         name = (self.empNameTxt.get())
         empId = (self.empIDTxt.get())
         userId=f"{empId}_{name}"
@@ -152,6 +154,7 @@ class RegistrationModule:
         notifctn = "We have collected " + str(args["faces"]) + " images for training."
         self.message.configure(text=notifctn)
 
+
     def getFaceEmbedding(self):
 
         ap = argparse.ArgumentParser()
@@ -162,11 +165,6 @@ class RegistrationModule:
         # Argument of insightface
         ap.add_argument('--image-size', default='112,112', help='')
         ap.add_argument('--model', default='../insightface/models/model-y1-test2/model,0', help='path to load model.')
-        ap.add_argument('--ga-model', default='', help='path to load model.')
-        ap.add_argument('--gpu', default=0, type=int, help='gpu id')
-        ap.add_argument('--det', default=0, type=int,
-                        help='mtcnn option, 1 means using R+O, 0 means detect from begining')
-        ap.add_argument('--flip', default=0, type=int, help='whether do lr flip aug')
         ap.add_argument('--threshold', default=1.24, type=float, help='ver dist threshold')
         args = ap.parse_args()
 
@@ -174,11 +172,8 @@ class RegistrationModule:
         genFaceEmbdng.genFaceEmbedding()
 
     def trainModel(self):
-        # ============================================= Training Params ====================================================== #
-
         ap = argparse.ArgumentParser()
 
-        # ap = argparse.ArgumentParser()
         ap.add_argument("--embeddings", default="faceEmbeddingModels/embeddings.pickle",
                         help="path to serialized db of facial embeddings")
         ap.add_argument("--model", default="faceEmbeddingModels/my_model.h5",
@@ -189,16 +184,16 @@ class RegistrationModule:
         args = vars(ap.parse_args())
 
         self.getFaceEmbedding()
+
         faceRecogModel = TrainFaceRecogModel(args)
         faceRecogModel.trainKerasModelForFaceRecognition()
 
-        # notifctn = "Model training is successful.No you can go for prediction."
-        # self.message.configure(text=notifctn)
+        notifctn = "Model training is successful.No you can go for prediction."
+        self.message.configure(text=notifctn)
 
     def makePrediction(self):
-        pass
-        # faceDetector = FacePredictor()
-        # faceDetector.detectFace()
+        faceDetector = FacePredictor()
+        faceDetector.detectFace()
 
     def close_window(self):
         self.window.destroy()

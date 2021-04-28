@@ -8,7 +8,7 @@ import pickle
 
 # Construct the argumet parser and parse the argument
 from src.common.Configurations import get_logger
-from softmax import SoftMax
+from src.training.softmax import SoftMax
 
 
 class TrainFaceRecogModel:
