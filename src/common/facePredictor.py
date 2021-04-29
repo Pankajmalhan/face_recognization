@@ -63,6 +63,8 @@ class FacePredictor():
         trackers = []
         texts = []
 
+        tracker = None
+
         cap = cv2.VideoCapture(0)
         frame_width = int(cap.get(3))
         frame_height = int(cap.get(4))
@@ -72,13 +74,14 @@ class FacePredictor():
         while True:
             ret, frame = cap.read()
             frames += 1
+            frame = cv2.resize(frame, (save_width, save_height))
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             texts = []
 
             bboxes = self.detector.detect_faces(frame)
 
             if len(bboxes) != 0:
-
                 for bboxe in bboxes:
                     bbox = bboxe['box']
                     bbox = np.array([bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]])
@@ -92,24 +95,41 @@ class FacePredictor():
                     nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2RGB)
                     nimg = np.transpose(nimg, (2, 0, 1))
                     embedding = self.embedding_model.get_feature(nimg).reshape(1, -1)
+                    if frames%3 == 0:
 
-                    text = "Unknown"
+                        preds = self.model.predict(embedding)
+                        preds = preds.flatten()
+                        # Get the highest accuracy embedded vector
+                        j = np.argmax(preds)
+                        proba = preds[j]
 
-                    # Predict class
-                    preds = self.model.predict(embedding)
-                    preds = preds.flatten()
-                    # Get the highest accuracy embedded vector
-                    j = np.argmax(preds)
-                    proba = preds[j]
+                        # draw the bounding box and text for the object
+                        if proba > proba_threshold:
+                            tracker = dlib.correlation_tracker()
+                            rect = dlib.rectangle(bbox[0], bbox[1], bbox[2], bbox[3])
+                            tracker.start_track(rgb, rect)
 
-                    if proba > proba_threshold:
-                        name = self.le.classes_[j]
-                        text = "{}".format(name)
-                        print("Recognized: {} <{:.2f}>".format(name, proba * 100))
-                    # Start tracking
-                    y = bbox[1] - 10 if bbox[1] - 10 > 10 else bbox[1] + 10
-                    cv2.putText(frame, text, (bbox[0], y), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (255, 255, 255), 1)
-                    cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (179, 0, 149), 4)
+                            name = self.le.classes_[j]
+                            text = "{}".format(name)
+                            print("Recognized: {} <{:.2f}>".format(name, proba * 100))
+                            print("Normal")
+                            y = bbox[1] - 10 if bbox[1] - 10 > 10 else bbox[1] + 10
+                            cv2.putText(frame, text, (bbox[0], y), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (255, 255, 255), 1)
+                            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (179, 0, 149), 4)
+                    else:
+                        if tracker!=None:
+                            tracker.update(rgb)
+                            pos = tracker.get_position()
+                            # unpack the position object
+                            startX = int(pos.left())
+                            startY = int(pos.top())
+                            endX = int(pos.right())
+                            endY = int(pos.bottom())
+                            print("tracker")
+                            cv2.rectangle(frame, (startX, startY), (endX, endY), (179, 0, 149), 4)
+                            cv2.putText(frame, text , (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.95,
+                                        (255, 255, 255), 1)
+
             cv2.imshow("Frame", frame)
             key = cv2.waitKey(1) & 0xFF
 
