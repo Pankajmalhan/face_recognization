@@ -17,6 +17,7 @@ import numpy as np
 import pickle
 import cv2
 
+from src.deep_sort import DeepSort
 
 class FacePredictor():
     def __init__(self, args):
@@ -51,6 +52,7 @@ class FacePredictor():
             # # Tracker params
             self.trackers = []
             self.texts = []
+            self.deepsort = DeepSort("ckpt.t7")
         except Exception as e:
             print(e)
 
@@ -95,40 +97,47 @@ class FacePredictor():
                     nimg = cv2.cvtColor(nimg, cv2.COLOR_BGR2RGB)
                     nimg = np.transpose(nimg, (2, 0, 1))
                     embedding = self.embedding_model.get_feature(nimg).reshape(1, -1)
-                    if frames%3 == 0:
 
-                        preds = self.model.predict(embedding)
-                        preds = preds.flatten()
-                        # Get the highest accuracy embedded vector
-                        j = np.argmax(preds)
-                        proba = preds[j]
+                    # outputs = self.deepsort.update(bboxe['box'], cls_conf, im)
+                    # if len(outputs) > 0:
+                    #     bbox_xyxy = outputs[:, :4]
+                    #     identities = outputs[:, -1]
+                    #     frame = draw_boxes(frame, bbox_xyxy, identities, offset=(xmin, ymin))
 
-                        # draw the bounding box and text for the object
-                        if proba > proba_threshold:
-                            tracker = dlib.correlation_tracker()
-                            rect = dlib.rectangle(bbox[0], bbox[1], bbox[2], bbox[3])
-                            tracker.start_track(rgb, rect)
-
-                            name = self.le.classes_[j]
-                            text = "{}".format(name)
-                            print("Recognized: {} <{:.2f}>".format(name, proba * 100))
-                            print("Normal")
-                            y = bbox[1] - 10 if bbox[1] - 10 > 10 else bbox[1] + 10
-                            cv2.putText(frame, text, (bbox[0], y), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (255, 255, 255), 1)
-                            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (179, 0, 149), 4)
-                    else:
-                        if tracker!=None:
-                            tracker.update(rgb)
-                            pos = tracker.get_position()
-                            # unpack the position object
-                            startX = int(pos.left())
-                            startY = int(pos.top())
-                            endX = int(pos.right())
-                            endY = int(pos.bottom())
-                            print("tracker")
-                            cv2.rectangle(frame, (startX, startY), (endX, endY), (179, 0, 149), 4)
-                            cv2.putText(frame, text , (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.95,
-                                        (255, 255, 255), 1)
+                    # if frames%3 == 0:
+                    #
+                    #     preds = self.model.predict(embedding)
+                    #     preds = preds.flatten()
+                    #     # Get the highest accuracy embedded vector
+                    #     j = np.argmax(preds)
+                    #     proba = preds[j]
+                    #
+                    #     # draw the bounding box and text for the object
+                    #     if proba > proba_threshold:
+                    #         tracker = dlib.correlation_tracker()
+                    #         rect = dlib.rectangle(bbox[0], bbox[1], bbox[2], bbox[3])
+                    #         tracker.start_track(rgb, rect)
+                    #
+                    #         name = self.le.classes_[j]
+                    #         text = "{}".format(name)
+                    #         print("Recognized: {} <{:.2f}>".format(name, proba * 100))
+                    #         print("Normal")
+                    #         y = bbox[1] - 10 if bbox[1] - 10 > 10 else bbox[1] + 10
+                    #         cv2.putText(frame, text, (bbox[0], y), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (255, 255, 255), 1)
+                    #         cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (179, 0, 149), 4)
+                    # else:
+                    #     if tracker!=None:
+                    #         tracker.update(rgb)
+                    #         pos = tracker.get_position()
+                    #         # unpack the position object
+                    #         startX = int(pos.left())
+                    #         startY = int(pos.top())
+                    #         endX = int(pos.right())
+                    #         endY = int(pos.bottom())
+                    #         print("tracker")
+                    #         cv2.rectangle(frame, (startX, startY), (endX, endY), (179, 0, 149), 4)
+                    #         cv2.putText(frame, text , (startX, startY - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.95,
+                    #                     (255, 255, 255), 1)
 
             cv2.imshow("Frame", frame)
             key = cv2.waitKey(1) & 0xFF
