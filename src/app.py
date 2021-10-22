@@ -34,10 +34,8 @@ class RegistrationModule:
         y_cordinate = int((screen_height / 2) - (window_height / 2))
 
         self.window.geometry("{}x{}+{}+{}".format(window_width, window_height, x_cordinate, y_cordinate))
-        # window.geometry('880x600')
         self.window.configure(background='#ffffff')
 
-        # window.attributes('-fullscreen', True)
 
         self.window.grid_rowconfigure(0, weight=1)
         self.window.grid_columnconfigure(0, weight=1)
